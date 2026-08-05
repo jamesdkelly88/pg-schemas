@@ -1,0 +1,5 @@
+[privileges]
+patterns = ["*"]
+
+[default_privileges]
+patterns = ["*"]
