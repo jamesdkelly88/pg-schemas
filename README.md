@@ -127,3 +127,59 @@ pgschema apply --plan output_schema.json --schema schema
 ```sh
 pgschema apply --plan output_schema.json --schema schema --auto-approve
 ```
+
+
+## Ownership
+
+Best practice is to have a `database_owner` role own the database and objects (unless a `schema_owner` role is required for segregation). 
+
+In order to satisfy this with `pgschema`, perform the following setup (TODO: needs thorough testing on different providers):
+
+```sql
+
+-- ==========================================
+-- 1. RUN AS SUPERUSER (Connected to 'postgres' database)
+-- ==========================================
+
+-- CREATE DB OWNER ROLE
+CREATE ROLE dbname_owner WITH NOLOGIN;
+
+-- CREATE DB
+CREATE DATABASE dbname WITH OWNER = dbname_owner;
+
+-- CREATE HUMAN ADMIN USER
+CREATE USER human WITH ENCRYPTED PASSWORD 'password';
+GRANT dbname_owner TO human WITH INHERIT TRUE, SET OPTION TRUE;
+
+-- CREATE PGSCHEMA USER THAT AUTOMATICALLY ASSUMES OWNER ROLE
+CREATE USER bot WITH ENCRYPTED PASSWORD 'password';
+GRANT dbname_owner TO bot WITH SET OPTION TRUE;
+ALTER ROLE bot IN DATABASE dbname SET role TO dbname_owner;
+
+-- CREATE APP ROLE
+CREATE ROLE dbname_app WITH NOLOGIN;
+
+-- CREATE APP USER
+CREATE USER app WITH ENCRYPTED PASSWORD 'password';
+GRANT dbname_app TO app;
+
+-- SECURE DATABASE
+REVOKE CONNECT ON DATABASE dbname FROM PUBLIC;
+GRANT CONNECT ON DATABASE dbname TO dbname_owner;
+GRANT CONNECT ON DATABASE dbname TO dbname_app;
+GRANT CONNECT ON DATABASE dbname TO bot;
+
+-- ==========================================
+-- 2. RUN CONNECTED TO TARGET DATABASE (\c dbname)
+-- ==========================================
+
+-- GRANT SPECIFIC PERMISSIONS TO APP ROLE
+GRANT USAGE ON SCHEMA schemaname TO dbname_app;
+GRANT SELECT ON ALL TABLES IN SCHEMA schemaname TO dbname_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE dbname_owner IN SCHEMA schemaname GRANT SELECT ON TABLES TO dbname_app;
+
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA schemaname TO dbname_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE dbname_owner IN SCHEMA schemaname GRANT USAGE, SELECT ON SEQUENCES TO dbname_app;
+
+
+```
