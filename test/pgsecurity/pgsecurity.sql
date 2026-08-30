@@ -5,5 +5,5 @@
 -- Dumped from database version PostgreSQL 18.4
 -- Dumped by pgschema version 1.12.2
 
-
+\i views/object_owners.sql
 \i views/role_members.sql
