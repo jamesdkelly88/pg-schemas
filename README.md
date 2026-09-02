@@ -24,6 +24,18 @@ PostgreSQL database schemas, structured for compatibility with [pgschema](https:
 
 These are processed in order and so this file can be edited to handle dependencies. The `\i` directives can be changed to include an entire folder (in alphabetical order) by adding a trailing `/`.
 
+## Prerequisites
+
+- Go
+- pgschema 
+  - install via Go: `go install github.com/pgplex/pgschema@latest`
+  - Add `~/go/bin` or `%userprofile%/go/bin` to your path variable
+- psql / pgadmin
+  - Add `C:\Program Files\pgAdmin 4\runtime` to your path if using pgAdmin on Windows
+- PostgreSQL instance with a database and a user with a password
+- The required schema(s) created within the database
+- If using extensions/multiple schemas, a `staging` database with the extensions installed and schemas created
+
 ## Usage
 
 ### Environment variables
@@ -83,6 +95,7 @@ pgschema dump --multi-file --schema schema --file database/schema/schema.sql --q
 - If extensions or cross schema references are used, then an external database should be used, rather than the default embedded instance
 - `pgschema` only works on a single schema at a time, so for multiple schemas, a looping process must be used
 - The schema must exist in the target database
+- Any extensions used must be installed in both the plan and target databases
 
 ```sh
 pgschema plan --schema schema --file database/schema/schema.sql                                                                               # outputs to console
@@ -143,6 +156,7 @@ In order to satisfy this with `pgschema`, perform the following setup (TODO: nee
 
 -- CREATE DB OWNER ROLE
 CREATE ROLE dbname_owner WITH NOLOGIN;
+GRANT dbname_owner TO superuser;
 
 -- CREATE DB
 CREATE DATABASE dbname WITH OWNER = dbname_owner;
@@ -153,7 +167,7 @@ GRANT dbname_owner TO human WITH INHERIT TRUE, SET TRUE;
 
 -- CREATE PGSCHEMA USER THAT AUTOMATICALLY ASSUMES OWNER ROLE
 CREATE USER bot WITH ENCRYPTED PASSWORD 'password';
-GRANT dbname_owner TO bot WITH SET TRUE;
+GRANT dbname_owner TO bot WITH INHERIT FALSE, SET TRUE;
 ALTER ROLE bot IN DATABASE dbname SET role TO dbname_owner;
 
 -- CREATE APP ROLE
@@ -164,10 +178,10 @@ CREATE USER app WITH ENCRYPTED PASSWORD 'password';
 GRANT dbname_app TO app;
 
 -- SECURE DATABASE
-REVOKE CONNECT ON DATABASE dbname FROM PUBLIC;
 GRANT CONNECT ON DATABASE dbname TO dbname_owner;
 GRANT CONNECT ON DATABASE dbname TO dbname_app;
 GRANT CONNECT ON DATABASE dbname TO bot;
+REVOKE CONNECT ON DATABASE dbname FROM PUBLIC;
 
 -- ==========================================
 -- 2. RUN CONNECTED TO TARGET DATABASE (\c dbname)

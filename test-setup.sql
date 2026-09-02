@@ -1,0 +1,26 @@
+CREATE ROLE test_owner WITH NOLOGIN;
+CREATE ROLE staging_owner WITH NOLOGIN;
+
+GRANT test_owner TO neondb_owner;
+GRANT staging_owner TO neondb_owner;
+
+CREATE DATABASE test WITH OWNER = test_owner;
+CREATE DATABASE staging WITH OWNER = staging_owner;
+
+CREATE USER james WITH ENCRYPTED PASSWORD 'xxx';
+CREATE USER bot WITH ENCRYPTED PASSWORD 'xxx';
+
+GRANT test_owner TO james WITH INHERIT TRUE, SET TRUE;
+GRANT test_owner TO bot WITH SET TRUE;
+ALTER ROLE bot IN DATABASE test SET ROLE TO test_owner;
+
+GRANT staging_owner TO bot WITH SET TRUE;
+ALTER ROLE bot IN DATABASE staging SET ROLE TO staging_owner;
+
+GRANT CONNECT ON DATABASE test TO test_owner;
+GRANT CONNECT ON DATABASE test TO bot;
+REVOKE CONNECT ON DATABASE test FROM PUBLIC;
+
+GRANT CONNECT ON DATABASE staging TO staging_owner;
+GRANT CONNECT ON DATABASE staging TO bot;
+REVOKE CONNECT ON DATABASE staging FROM PUBLIC;
