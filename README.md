@@ -4,6 +4,7 @@ PostgreSQL database schemas, structured for compatibility with [pgschema](https:
 
 ```
 ├── database1
+|   ├── database1.tfvars
 │   ├── schema1
 |   |   ├── schema1.sql
 │   │   └── tables
@@ -18,6 +19,7 @@ PostgreSQL database schemas, structured for compatibility with [pgschema](https:
 │       └── privileges
 │           └── view.sql
 ├── database2...
+└── terraform
 ```
 
 `pgschema` creates a `.sql` file for each database object. It also creates a `.sql` file for the schema listing the object files to include. 
@@ -204,3 +206,8 @@ SELECT
 -- LEAVE ASSUMED ROLE
 SET ROLE NONE;
 ```
+
+
+## Terraform
+
+TODO: terraform script using [this provider](https://registry.terraform.io/providers/cyrilgdn/postgresql/latest/docs) to deploy a database, extensions, roles etc as defined for each DB schema.
